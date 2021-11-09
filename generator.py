@@ -2,7 +2,7 @@ from tensorflow.keras import layers
 
 def load_config:
     pass
-def create_gen_arcitecture:
+def create_gen_arcitecture():
     pass
 
 def make_generator_model():
