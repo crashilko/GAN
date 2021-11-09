@@ -1,7 +1,9 @@
 import generator
 import discriminator
-import data_process
+from data_process import get_train_data
 
-generator.make_generator_model()
+get_train_data()
+gen = generator.make_generator_model()
+generator.generate_image(gen)
 
 

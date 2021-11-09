@@ -1,7 +1,10 @@
+import tensorflow as tf
 from tensorflow.keras import layers
+import matplotlib.pyplot as plt
 
-def load_config:
+def load_config():
     pass
+
 def create_gen_arcitecture():
     pass
 
@@ -26,5 +29,13 @@ def make_generator_model():
 
     model.add(layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
     assert model.output_shape == (None, 28, 28, 1)
-
+    print("Generator: Built sucessfully")
     return model
+
+def generate_image(generator):
+
+    noise = tf.random.normal([1, 100])
+    generated_image = generator(noise, training=False)
+    print("Generator: Image generated sucessfully")
+    print(generated_image)
+    plt.imshow(generated_image[0, :, :, 0], cmap='gray')
