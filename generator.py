@@ -1,5 +1,10 @@
 from tensorflow.keras import layers
 
+def load_config:
+    pass
+def create_gen_arcitecture:
+    pass
+
 def make_generator_model():
     model = tf.keras.Sequential()
     model.add(layers.Dense(7*7*256, use_bias=False, input_shape=(100,)))
