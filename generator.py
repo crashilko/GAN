@@ -37,5 +37,16 @@ def generate_image(generator):
     noise = tf.random.normal([1, 100])
     generated_image = generator(noise, training=False)
     print("Generator: Image generated sucessfully")
-    print(generated_image)
     plt.imshow(generated_image[0, :, :, 0], cmap='gray')
+    plt.show()
+    return generated_image
+
+def gen_loss(fake_output):
+    cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    return cross_entropy(tf.ones_like(fake_output), fake_output)
+
+def set_gen_optimizer(name):
+    if name == 'Adam':
+        return tf.keras.optimizers.Adam(1e-4)
+    else:
+        print("Generator: optimizer not implemented")
