@@ -3,13 +3,14 @@ from tensorflow.keras import layers
 import os
 import time
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 class GANModel:
     def __init__(self, gen_loss, gen_opt, discr_loss, discr_opt):
         self.generator, self.gen_loss, self.gen_opt = self.__init_g__(gen_loss, gen_opt)
         self.discriminator, self.discr_loss, self.discr_opt = self.__init_d__(discr_loss, discr_opt)
-        self.checkpoint, self.prefix = self.save_checkpoint()
+        self.checkpoint, self.checkpoint_prefix = self.save_checkpoint()
         print("Init sucess")
         print("Model summary\nGenerator")
         print(self.generator.summary())
@@ -41,6 +42,15 @@ class GANModel:
         else:
             print("Not implemented loss type. Init Failed")
             return -1
+
+    def generator_loss(self, fake_output):
+        return self.gen_loss(tf.ones_like(fake_output), fake_output)
+
+    def discriminator_loss(self, real_output, fake_output):
+        real_loss = self.discr_loss(tf.ones_like(real_output), real_output)
+        fake_loss = self.discr_loss(tf.zeros_like(fake_output), fake_output)
+        total_loss = real_loss + fake_loss
+        return total_loss
 
     def __set_architecture_g__(self):
         model = tf.keras.Sequential()
@@ -103,7 +113,7 @@ class GANModel:
 
 
     @tf.function
-    def train_step(self, images):
+    def train_step(self, images, BATCH_SIZE, noise_dim):
         noise = tf.random.normal([BATCH_SIZE, noise_dim])
 
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
@@ -112,8 +122,8 @@ class GANModel:
             real_output = self.discriminator(images, training=True)
             fake_output = self.discriminator(generated_images, training=True)
 
-            gen_loss = self.gen_loss(fake_output)
-            disc_loss = self.discr_loss(real_output, fake_output)
+            gen_loss = self.generator_loss(fake_output)
+            disc_loss = self.discriminator_loss(real_output, fake_output)
 
         gradients_of_generator = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
         gradients_of_discriminator = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
@@ -121,17 +131,17 @@ class GANModel:
         self.gen_opt.apply_gradients(zip(gradients_of_generator, self.generator.trainable_variables))
         self.discr_opt.apply_gradients(zip(gradients_of_discriminator, self.discriminator.trainable_variables))
 
-    def train(self, dataset, epochs):
+    def train(self, dataset, epochs, BATCH_SIZE, SHOW_IMAGES, SEED = None):
         for epoch in range(epochs):
             print("epoch", epoch)
             start = time.time()
 
-            for image_batch in dataset:
-                self.train_step(image_batch)
-
+            for image_batch in tqdm(dataset):
+                self.train_step(image_batch, BATCH_SIZE, 100)
             # Produce images for the GIF as you go
             # display.clear_output(wait=True)
-            self.generate_and_save_images(epoch + 1, seed)
+            if SHOW_IMAGES:
+                self.generate_and_save_images(epoch + 1, SEED)
 
             # Save the model every 15 epochs
             if (epoch + 1) % 15 == 0:
@@ -141,7 +151,9 @@ class GANModel:
 
         # Generate after the final epoch
         # display.clear_output(wait=True)
-        self.generate_and_save_images(epochs, seed)
+        if SHOW_IMAGES:
+            self.generate_and_save_images(epoch, SEED)
+
 
     def generate_and_save_images(self, epoch, test_input):
         # Notice `training` is set to False.
